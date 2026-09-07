@@ -1,0 +1,31 @@
+name: Profile README checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readme:
+    name: Validate profile README
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Check whitespace and render Markdown
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show --format= --check HEAD
+          test -s README.md
+          jq -Rs '{text: ., mode: "gfm"}' README.md > "$RUNNER_TEMP/markdown-input.json"
+          gh api --method POST markdown --input "$RUNNER_TEMP/markdown-input.json" > "$RUNNER_TEMP/profile-readme.html"
+          test -s "$RUNNER_TEMP/profile-readme.html"
